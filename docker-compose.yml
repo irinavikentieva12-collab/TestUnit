@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: finance_bot_db
+    environment:
+      POSTGRES_DB: finance_bot_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  bot:
+    build: .
+    container_name: finance_bot
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=finance_bot_db
+      - DB_USER=postgres
+      - DB_PASSWORD=123
+      - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
